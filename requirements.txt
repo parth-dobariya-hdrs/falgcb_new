@@ -1,0 +1,39 @@
+# 
+# FILE: requirements.txt
+# 
+
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+
+# Database
+psycopg[binary,pool]
+sqlalchemy
+alembic
+
+# LangGraph and AI
+langgraph
+langchain-groq
+langchain-community
+langchain-core
+langchain-google-genai
+tavily-python
+
+# Utilities
+rich
+httpx
+PyJWT>=2.8.0
+
+# Testing
+pytest
+pytest-asyncio
+
+# Additional FastAPI dependencies
+fastapi-users[sqlalchemy,oauth]
+aiosqlite
+asyncpg
