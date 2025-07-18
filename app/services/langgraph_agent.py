@@ -58,7 +58,6 @@ class LangGraphAgent:
             tools=[self.tavily],
             checkpointer=memory
         )
-
     async def process_message(
             self,
             message: str,
@@ -81,11 +80,64 @@ class LangGraphAgent:
                 yield chunk
 
         except Exception as e:
-            logger.error(f"Error processing message: {e}")
-            yield {
-                "error": True,
-                "message": f"Failed to process message: {str(e)}"
-            }
+            yield {"error": True, "message": str(e)}
+    def extract_response_info(self, chunk: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract response information from LangGraph chunk
+        """
+        response_info = {
+            "is_tool_call": False,
+            "is_final_response": False,
+            "content": "",
+            "content_chunk": "",
+            "tool_calls": []
+        }
+        
+        # Handle different chunk types from LangGraph
+        if "messages" in chunk:
+            for message in chunk["messages"]:
+                if hasattr(message, 'content'):
+                    # This is likely a streaming content chunk
+                    response_info["content_chunk"] = message.content
+                    response_info["content"] = message.content
+                    
+                if hasattr(message, 'tool_calls') and message.tool_calls:
+                    response_info["is_tool_call"] = True
+                    response_info["tool_calls"] = message.tool_calls
+        
+        # Check if this is the final message
+        if chunk.get("__end__"):
+            response_info["is_final_response"] = True
+            
+        return response_info
+
+    # async def process_message(
+    #         self,
+    #         message: str,
+    #         thread_id: str
+    # ) -> AsyncGenerator[Dict[str, Any], None]:
+    #     """
+    #     Process a user message and yield streaming responses
+    #     """
+    #     try:
+    #         memory = db_manager.get_memory_checkpointer()
+
+    #         # Create agent with current memory instance
+    #         agent = self._create_agent(memory)
+
+    #         # Stream the agent's response
+    #         async for chunk in agent.astream(
+    #                 {"messages": [HumanMessage(content=message)]},
+    #                 {"configurable": {"thread_id": thread_id}}
+    #         ):
+    #             yield chunk
+
+    #     except Exception as e:
+    #         logger.error(f"Error processing message: {e}")
+    #         yield {
+    #             "error": True,
+    #             "message": f"Failed to process message: {str(e)}"
+    #         }
 
     async def get_chat_history(self, thread_id: str) -> List[Dict[str, Any]]:
         """

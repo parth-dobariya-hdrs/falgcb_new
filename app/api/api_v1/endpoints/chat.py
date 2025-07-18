@@ -2,7 +2,7 @@
 # FILE: app/api/api_v1/endpoints/chat.py
 # ================================
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from app.schemas.chat import ChatRequest, ChatResponse, ChatHistory
 from app.services.chat_service import chat_service
 from app.dependencies.thread import verify_from_request_body,verify_from_path,verify_from_update_title_req_body
@@ -21,6 +21,62 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Add this endpoint for testing mock streaming
+@router.post("/message/stream/mock")
+async def send_message_streaming_mock(
+    request: ChatRequest
+    # user: ClerkUser = Depends(current_active_user),
+    # _: None = Depends(verify_from_request_body)
+):
+    """
+    Mock streaming endpoint for testing
+    """
+    try:
+        return StreamingResponse(
+            chat_service.process_chat_message_streaming_mock(
+                message=request.message,
+                thread_id=request.thread_id
+            ),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Content-Type": "text/event-stream",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Cache-Control"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in mock streaming endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+@router.post("/message/stream")
+async def send_message_streaming(
+    request: ChatRequest
+    # user: ClerkUser = Depends(current_active_user),
+    # _: None = Depends(verify_from_request_body)
+):
+    """
+    Send a message to the chatbot and get a streaming response
+    """
+    try:
+        return StreamingResponse(
+            chat_service.process_chat_message_streaming(
+                message=request.message,
+                thread_id=request.thread_id
+            ),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Content-Type": "text/event-stream",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Cache-Control"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in streaming send_message endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/message", response_model=ChatResponse)
 async def send_message(request: ChatRequest,user: ClerkUser = Depends(current_active_user),_: None = Depends(verify_from_request_body)):
